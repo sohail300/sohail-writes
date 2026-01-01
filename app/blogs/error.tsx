@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { FaRegSadTear } from "react-icons/fa";
 
 export default function BlogsError({
   error,
@@ -13,9 +14,11 @@ export default function BlogsError({
     <main className="min-h-screen flex items-center justify-center">
       <div className="max-w-4xl mx-auto">
         <div className="neo-card bg-red-100 text-center py-20">
-          <div className="text-6xl mb-6">⚠️</div>
-          <h1 className="text-4xl font-black mb-4">Something went wrong!</h1>
-          <p className="text-xl font-bold text-neo-gray-dark mb-8">
+          <div className="text-6xl mb-6 text-red-500 flex items-center justify-center">
+            <FaRegSadTear />
+          </div>
+          <h1 className="text-3xl font-black mb-4">Something went wrong!</h1>
+          <p className="text-lg font-bold text-neo-gray-dark mb-8">
             {error.message || "Failed to load blogs. Please try again."}
           </p>
           <div className="flex gap-4 justify-center flex-wrap">

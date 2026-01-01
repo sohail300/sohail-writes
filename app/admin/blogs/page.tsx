@@ -283,10 +283,12 @@ export default function AdminBlogs() {
                     <div className="flex flex-col gap-4 mb-4">
                       <span className="flex items-center justify-start gap-2">
                         <span className="font-bold">Platform:</span>
-                        {blog.platform === "Medium" && <FaMedium size={20} />}
+                        {blog.platform === "Medium" && (
+                          <FaMedium size={20} color="#000000" />
+                        )}
                         {blog.platform === "Dev.to" && <FaDev size={20} />}
                         {blog.platform === "Hashnode" && (
-                          <FaHashnode size={20} />
+                          <FaHashnode size={20} color="#2962ff" />
                         )}
                         {blog.platform === "Other" && <FaGlobe size={20} />}
                       </span>

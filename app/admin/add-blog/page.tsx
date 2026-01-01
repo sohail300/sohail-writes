@@ -99,8 +99,8 @@ export default function AddBlog() {
       setTags("");
       setIsPublished(true);
 
-      // Clear success message after 5 seconds
-      setTimeout(() => setSuccess(false), 5000);
+      // Redirect to blogs page
+      router.push("/admin/blogs");
     } catch (err: any) {
       setError(err.message || "An error occurred. Please try again.");
     } finally {

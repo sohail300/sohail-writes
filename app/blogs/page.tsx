@@ -98,9 +98,10 @@ export const revalidate = 86400; // 24 hours
 export default async function BlogsPage({
   searchParams,
 }: {
-  searchParams: { [key: string]: string | string[] | undefined };
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  const blogs = await fetchBlogs(searchParams);
+  const resolvedSearchParams = await searchParams;
+  const blogs = await fetchBlogs(resolvedSearchParams);
 
   // Generate breadcrumb structured data
   const breadcrumbData = generateBreadcrumbSchema([
@@ -180,11 +181,15 @@ export default async function BlogsPage({
 export async function generateMetadata({
   searchParams,
 }: {
-  searchParams: { [key: string]: string | string[] | undefined };
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }): Promise<Metadata> {
-  const search = searchParams.search as string | undefined;
-  const platform = searchParams.platform as string | string[] | undefined;
-  const tag = searchParams.tag as string | string[] | undefined;
+  const resolvedSearchParams = await searchParams;
+  const search = resolvedSearchParams.search as string | undefined;
+  const platform = resolvedSearchParams.platform as
+    | string
+    | string[]
+    | undefined;
+  const tag = resolvedSearchParams.tag as string | string[] | undefined;
 
   let title = "All Blogs";
   let description =

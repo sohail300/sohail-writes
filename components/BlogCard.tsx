@@ -27,15 +27,6 @@ export default function BlogCard({
     day: "numeric",
   });
 
-  // Get platform color
-  const getPlatformColor = (platform: string) => {
-    const platformLower = platform.toLowerCase();
-    if (platformLower.includes("medium")) return "bg-neo-green";
-    if (platformLower.includes("hashnode")) return "bg-neo-blue";
-    if (platformLower.includes("dev")) return "bg-neo-yellow";
-    return "bg-neo-gray";
-  };
-
   return (
     <a
       href={url}
@@ -59,8 +50,10 @@ export default function BlogCard({
           <div className="flex flex-col items-start gap-2">
             <span className="flex items-center justify-start gap-2 text-sm font-semibold text-neo-black">
               Platform:
-              {platform === "Medium" && <FaMedium size={16} />}
-              {platform === "Hashnode" && <FaHashnode size={16} />}
+              {platform === "Medium" && <FaMedium size={16} color="#000000" />}
+              {platform === "Hashnode" && (
+                <FaHashnode size={16} color="#2962ff" />
+              )}
               {platform === "Dev.to" && <FaDev size={16} />}
               {platform === "Other" && <FaGlobe size={16} />}
             </span>

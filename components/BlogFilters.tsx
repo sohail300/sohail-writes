@@ -73,7 +73,7 @@ export default function BlogFilters() {
     };
   }, [isOpen]);
 
-  function applyFilters() {
+  async function applyFilters() {
     const params = new URLSearchParams();
 
     if (search.trim()) {
@@ -99,7 +99,24 @@ export default function BlogFilters() {
     }
 
     const queryString = params.toString();
-    router.push(queryString ? `/blogs?${queryString}` : "/blogs");
+
+    // Call the API
+    try {
+      const response = await fetch(`/api/blogs?${queryString}`);
+      const result = await response.json();
+
+      if (response.ok) {
+        console.log("Blogs fetched:", result.data);
+        console.log("Metadata:", result.meta);
+
+        // Update URL with filters
+        router.push(queryString ? `/blogs?${queryString}` : "/blogs");
+      } else {
+        console.error("Error fetching blogs:", result.error);
+      }
+    } catch (error) {
+      console.error("Failed to fetch blogs:", error);
+    }
 
     // Close the sidebar after applying filters
     setIsOpen(false);
