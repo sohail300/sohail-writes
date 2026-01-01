@@ -10,7 +10,7 @@ export default function BlogsError({
   reset: () => void;
 }) {
   return (
-    <main className="neo-container min-h-screen py-12">
+    <main className="min-h-screen flex items-center justify-center">
       <div className="max-w-4xl mx-auto">
         <div className="neo-card bg-red-100 text-center py-20">
           <div className="text-6xl mb-6">⚠️</div>

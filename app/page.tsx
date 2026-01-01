@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import Hero from "./components/Hero";
+import Hero from "../components/Hero";
 import BlogCard from "@/components/BlogCard";
 import Link from "next/link";
 import { siteConfig } from "@/config/site";
@@ -91,14 +91,11 @@ export default async function Home() {
           <section className="neo-container py-20">
             <div className="max-w-7xl mx-auto">
               {/* Section Header */}
-              <div className="flex justify-between items-center mb-12 flex-wrap gap-4">
+              <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
                 <div>
-                  <h2 className="text-4xl md:text-6xl font-black mb-2">
+                  <h2 className="text-3xl md:text-4xl font-black mb-2">
                     Latest Blogs
                   </h2>
-                  <p className="text-lg font-bold text-neo-gray-dark">
-                    Fresh insights and technical deep-dives
-                  </p>
                 </div>
                 <Link
                   href="/blogs"

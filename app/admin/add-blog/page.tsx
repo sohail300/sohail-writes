@@ -125,12 +125,12 @@ export default function AddBlog() {
   }
 
   return (
-    <div className="neo-container min-h-screen py-8">
-      <div className="max-w-3xl mx-auto">
+    <div className="min-h-screen pt-24 bg-neo-gray pb-16">
+      <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-4xl md:text-5xl font-black">Add New Blog</h1>
-          <div className="flex gap-4">
+          <h1 className="text-2xl md:text-3xl font-black">Add New Blog</h1>
+          <div className="flex gap-8">
             <Link
               href="/admin/blogs"
               className="neo-btn bg-neo-blue hover:bg-neo-blue"

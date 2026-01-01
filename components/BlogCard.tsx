@@ -1,3 +1,6 @@
+import { FaCalendar, FaDev, FaGlobe } from "react-icons/fa";
+import { FaHashnode, FaMedium } from "react-icons/fa6";
+
 interface BlogCardProps {
   title: string;
   excerpt: string;
@@ -40,30 +43,30 @@ export default function BlogCard({
       rel="noopener noreferrer"
       className="block group"
     >
-      <article className="neo-card hover:translate-x-[4px] hover:translate-y-[4px] transition-all duration-200 dark:hover:shadow-[2px_2px_0px_#fff] hover:shadow-[2px_2px_0px_#000]">
+      <article className="neo-card transition-all duration-200 bg-neo-white">
         {/* Image */}
         <div className="w-full h-48 border-4 border-neo-black mb-4 overflow-hidden bg-neo-gray">
           <img
             src={image}
             alt={title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+            className="w-full h-full object-cover transition-transform duration-200"
           />
         </div>
 
         {/* Content */}
         <div className="space-y-3">
           {/* Platform Badge */}
-          <div className="flex items-center gap-2">
-            <span
-              className={`inline-block border-4 border-neo-black ${getPlatformColor(
-                platform
-              )} px-3 py-1 text-xs font-black uppercase text-neo-black dark:text-black`}
-            >
-              {platform}
+          <div className="flex flex-col items-start gap-2">
+            <span className="flex items-center justify-start gap-2 text-sm font-semibold text-neo-black">
+              Platform:
+              {platform === "Medium" && <FaMedium size={16} />}
+              {platform === "Hashnode" && <FaHashnode size={16} />}
+              {platform === "Dev.to" && <FaDev size={16} />}
+              {platform === "Other" && <FaGlobe size={16} />}
             </span>
-            <span className="text-sm font-bold text-neo-gray-dark">
-              {formattedDate}
-            </span>
+            <div className="text-sm font-semibold text-neo-black flex items-center justify-start gap-2">
+              Published: {formattedDate}
+            </div>
           </div>
 
           {/* Title */}

@@ -20,8 +20,8 @@
   --card-bg: var(--neo-white);
 }
 
-/* Dark Mode Colors */
-.dark {
+/* Dark Mode Colors - Disabled */
+/* .dark {
   --neo-white: #1a1a1a;
   --neo-black: #ffffff;
   --neo-yellow: #ffd700;
@@ -33,11 +33,11 @@
   --neo-gray-dark: #b0b0b0;
   
   /* Theme Colors */
-  --background: #1a1a1a;
+  /* --background: #1a1a1a;
   --foreground: #ffffff;
   --border: #ffffff;
   --card-bg: #2d2d2d;
-}
+} */
 
 @theme inline {
   /* Custom Neo-Brutalist Colors */
@@ -56,7 +56,7 @@
   --font-montserrat: var(--font-montserrat);
   
   /* Custom Shadows */
-  --shadow-brutal: 6px 6px 0px var(--border);
+  --shadow-brutal: 5px 5px 0px var(--border);
   --shadow-brutal-sm: 4px 4px 0px var(--border);
   --shadow-brutal-lg: 8px 8px 0px var(--border);
 }
@@ -77,65 +77,14 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Typography Base Styles */
-h1, h2, h3, h4, h5, h6 {
-  font-weight: 900;
-  line-height: 1.2;
-  letter-spacing: -0.02em;
-  color: var(--foreground);
+::-webkit-scrollbar {
+  width: 4px;
 }
-
-h1 {
-  font-size: 3rem;
-  margin-bottom: 1.5rem;
+::-webkit-scrollbar-track {
+  background: var(--neo-gray);
 }
-
-@media (max-width: 768px) {
-  h1 {
-    font-size: 2.5rem;
-  }
-}
-
-h2 {
-  font-size: 2.5rem;
-  margin-bottom: 1.25rem;
-}
-
-h3 {
-  font-size: 2rem;
-  margin-bottom: 1rem;
-}
-
-h4 {
-  font-size: 1.5rem;
-  margin-bottom: 0.875rem;
-}
-
-p {
-  margin-bottom: 1rem;
-  font-size: 1.125rem;
-}
-
-/* Link Styles */
-a {
-  color: var(--foreground);
-  text-decoration: underline;
-  text-decoration-thickness: 2px;
-  text-underline-offset: 4px;
-  font-weight: 700;
-  transition: all 0.1s ease;
-}
-
-a:hover {
-  color: var(--foreground);
-  text-decoration-thickness: 3px;
-}
-
-/* Button Base Styles */
-button {
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.1s ease;
+::-webkit-scrollbar-thumb {
+  background: var(--neo-black);
 }
 
 /* Utility Classes */
@@ -156,8 +105,8 @@ button {
 }
 
 .neo-btn {
-  padding: 0.75rem 1.5rem;
-  border: 4px solid var(--border);
+  padding: 0.5rem 1rem;
+  border: 3px solid var(--border);
   background-color: var(--neo-yellow);
   color: var(--neo-black);
   font-weight: 900;
@@ -180,24 +129,23 @@ button {
 
 .neo-btn:hover {
   transform: translate(2px, 2px);
-  box-shadow: 4px 4px 0px var(--border);
+  box-shadow: 3px 3px 0px var(--border);
 }
 
 .neo-btn:active {
-  transform: translate(6px, 6px);
+  transform: translate(5px, 5px);
   box-shadow: none;
 }
 
 .neo-card {
   padding: 2rem;
-  border: 4px solid var(--border);
-  background-color: var(--card-bg);
+  border: 3px solid var(--border);
   box-shadow: var(--shadow-brutal);
 }
 
 .neo-input {
   padding: 0.75rem 1rem;
-  border: 4px solid var(--border);
+  border: 3px solid var(--border);
   background-color: var(--card-bg);
   font-size: 1rem;
   font-weight: 600;
@@ -213,12 +161,6 @@ button {
 
 .neo-input::placeholder {
   color: var(--neo-gray-dark);
-}
-
-/* Container */
-.neo-container {
-  margin: 0 auto;
-  padding: 2rem;
 }
 
 /* Custom Animations */

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export default function AdminLogin() {
@@ -9,6 +9,14 @@ export default function AdminLogin() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Redirect if user is already logged in
+  useEffect(() => {
+    const token = localStorage.getItem("adminToken");
+    if (token) {
+      router.push("/admin/blogs");
+    }
+  }, [router]);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -43,7 +51,7 @@ export default function AdminLogin() {
   return (
     <div className="neo-container min-h-screen flex items-center justify-center bg-neo-gray">
       <div className="neo-card bg-neo-white max-w-md w-full mx-4">
-        <h1 className="text-4xl md:text-5xl font-black mb-2 text-center">
+        <h1 className="text-2xl md:text-3xl font-black mb-2 text-center">
           Admin Login
         </h1>
         <p className="font-bold mb-8 text-neo-gray-dark text-center">

@@ -163,14 +163,14 @@ export default function EditBlog({
   }
 
   return (
-    <div className="neo-container min-h-screen py-8">
-      <div className="max-w-3xl mx-auto">
+    <div className="min-h-screen pt-24 bg-neo-gray pb-16">
+      <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
           <div>
-            <h1 className="text-4xl md:text-5xl font-black mb-2">Edit Blog</h1>
+            <h1 className="text-2xl md:text-3xl font-black mb-2">Edit Blog</h1>
           </div>
-          <div className="flex gap-4">
+          <div className="flex gap-8">
             <Link href="/admin/blogs" className="neo-btn bg-neo-gray">
               ← Back to Blogs
             </Link>
@@ -218,6 +218,9 @@ export default function EditBlog({
                 disabled={saving}
                 placeholder="Enter blog title"
               />
+              <p className="text-sm font-semibold text-neo-gray-dark mt-1">
+                {title.length}/200 characters
+              </p>
             </div>
 
             {/* Excerpt */}
@@ -235,6 +238,9 @@ export default function EditBlog({
                 disabled={saving}
                 placeholder="Brief description of your blog post"
               />
+              <p className="text-sm font-semibold text-neo-gray-dark mt-1">
+                {excerpt.length}/500 characters
+              </p>
             </div>
 
             {/* Platform */}

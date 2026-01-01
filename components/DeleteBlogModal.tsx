@@ -18,11 +18,17 @@ export default function DeleteBlogModal({
           undone.
         </p>
         <div className="flex gap-4">
-          <button onClick={onConfirm} className="neo-btn bg-red-100 flex-1">
-            Yes, Delete
+          <button
+            onClick={onConfirm}
+            className="neo-btn bg-red-100 w-full cursor-pointer"
+          >
+            <span className="text-center">Yes, Delete</span>
           </button>
-          <button onClick={onCancel} className="neo-btn bg-neo-gray flex-1">
-            Cancel
+          <button
+            onClick={onCancel}
+            className="neo-btn bg-neo-gray w-full cursor-pointer"
+          >
+            <span className="text-center">Cancel</span>
           </button>
         </div>
       </div>

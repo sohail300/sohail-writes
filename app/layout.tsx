@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { Manrope, Montserrat } from "next/font/google";
 import "./globals.css";
+import "lenis/dist/lenis.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import Header from "@/components/Header";
+import SmoothScroll from "@/components/SmoothScroll";
 import { siteConfig } from "@/config/site";
 
 const manrope = Manrope({
@@ -80,10 +82,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${manrope.variable} ${montserrat.variable}`}>
+        <SmoothScroll />
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
-          enableSystem
+          defaultTheme="light"
+          enableSystem={false}
           disableTransitionOnChange
         >
           <Header />

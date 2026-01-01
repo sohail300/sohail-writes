@@ -1,30 +1,25 @@
 import Link from "next/link";
-import ThemeToggle from "./ThemeToggle";
+import Image from "next/image";
 
 export default function Header() {
   return (
-    <header className="neo-container">
-      <nav className="max-w-7xl mx-auto flex justify-between items-center py-6">
+    <nav className="w-full mx-auto py-2 fixed top-0 left-0 right-0 z-50 bg-neo-white">
+      <div className="max-w-7xl mx-auto flex justify-between items-center px-4">
         {/* Logo */}
-        <Link
-          href="/"
-          className="text-2xl md:text-3xl font-black no-underline hover:no-underline"
-        >
-          Sohail Writes
+        <Link href="/" className="text-lg md:text-xl font-black">
+          <Image src="/logo.png" alt="Sohail Writes" width={100} height={100} />
         </Link>
 
         {/* Navigation */}
         <div className="flex items-center gap-4">
           <Link
             href="/blogs"
-            className="neo-btn bg-neo-white hover:bg-neo-white text-sm md:text-base px-4 py-2 md:px-6 md:py-3"
+            className="neo-btn bg-neo-yellow hover:bg-neo-yellow"
           >
             Blogs
           </Link>
-          <ThemeToggle />
         </div>
-      </nav>
-    </header>
+      </div>
+    </nav>
   );
 }
-

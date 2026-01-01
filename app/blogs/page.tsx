@@ -24,34 +24,54 @@ async function fetchBlogs(searchParams: {
   try {
     await connectDB();
 
+    // Parse query parameters (matching API route logic)
+    const platforms = searchParams.platform
+      ? Array.isArray(searchParams.platform)
+        ? searchParams.platform
+        : [searchParams.platform]
+      : [];
+    const tags = searchParams.tag
+      ? Array.isArray(searchParams.tag)
+        ? searchParams.tag
+        : [searchParams.tag]
+      : [];
+    const search = searchParams.search as string | undefined;
+    const page = Math.max(1, parseInt((searchParams.page as string) || "1"));
+    const limit = Math.min(
+      100,
+      Math.max(1, parseInt((searchParams.limit as string) || "10"))
+    );
+    const sort = ((searchParams.sort as string) || "desc") as "asc" | "desc";
+
     // Build query
     const query: any = { isPublished: true };
 
     // Handle platform filter
-    if (searchParams.platform) {
-      const platforms = Array.isArray(searchParams.platform)
-        ? searchParams.platform
-        : [searchParams.platform];
+    if (platforms.length > 0) {
       query.platform = { $in: platforms };
     }
 
     // Handle tags filter
-    if (searchParams.tag) {
-      const tags = Array.isArray(searchParams.tag)
-        ? searchParams.tag
-        : [searchParams.tag];
+    if (tags.length > 0) {
       query.tags = { $in: tags };
     }
 
     // Handle search
-    if (searchParams.search) {
-      query.title = { $regex: searchParams.search as string, $options: "i" };
+    if (search && search.trim()) {
+      query.title = { $regex: search.trim(), $options: "i" };
     }
 
-    // Fetch blogs
+    // Calculate pagination
+    const skip = (page - 1) * limit;
+
+    // Build sort order
+    const sortOrder: any = { publishedAt: sort === "asc" ? 1 : -1 };
+
+    // Fetch blogs with pagination and sorting
     const blogs = await Blog.find(query)
-      .sort({ publishedAt: -1 })
-      .limit(100)
+      .sort(sortOrder)
+      .skip(skip)
+      .limit(limit)
       .lean()
       .exec();
 
@@ -72,32 +92,6 @@ async function fetchBlogs(searchParams: {
   }
 }
 
-async function fetchAllBlogsForFilters(): Promise<BlogType[]> {
-  try {
-    await connectDB();
-
-    const blogs = await Blog.find({ isPublished: true })
-      .sort({ publishedAt: -1 })
-      .limit(1000)
-      .lean()
-      .exec();
-
-    return blogs.map((blog: any) => ({
-      _id: blog._id.toString(),
-      title: blog.title,
-      excerpt: blog.excerpt,
-      platform: blog.platform,
-      url: blog.url,
-      image: blog.image,
-      publishedAt: blog.publishedAt.toString(),
-      tags: blog.tags,
-    }));
-  } catch (error) {
-    console.error("Error fetching blogs for filters:", error);
-    return [];
-  }
-}
-
 // Enable ISR with 24-hour revalidation
 export const revalidate = 86400; // 24 hours
 
@@ -106,19 +100,7 @@ export default async function BlogsPage({
 }: {
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
-  const [blogs, allBlogs] = await Promise.all([
-    fetchBlogs(searchParams),
-    fetchAllBlogsForFilters(),
-  ]);
-
-  // Extract unique platforms and tags for filters
-  const availablePlatforms = Array.from(
-    new Set(allBlogs.map((blog) => blog.platform))
-  ).sort();
-
-  const availableTags = Array.from(
-    new Set(allBlogs.flatMap((blog) => blog.tags))
-  ).sort();
+  const blogs = await fetchBlogs(searchParams);
 
   // Generate breadcrumb structured data
   const breadcrumbData = generateBreadcrumbSchema([
@@ -130,31 +112,27 @@ export default async function BlogsPage({
     <>
       <StructuredData data={breadcrumbData} />
 
-      <main className="neo-container min-h-screen py-12">
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="mb-12 text-center">
-            <h1 className="text-5xl md:text-7xl font-black mb-4">All Blogs</h1>
-            <p className="text-xl font-bold text-neo-gray-dark">
-              Explore articles on backend engineering, databases, and system
-              design
-            </p>
-          </div>
-
-          {/* Filters Section */}
-          <div className="mb-12">
-            <div className="neo-card bg-neo-white">
-              <h2 className="text-2xl font-black mb-6">Filter & Search</h2>
-              <BlogFilters
-                availablePlatforms={availablePlatforms}
-                availableTags={availableTags}
-              />
+      <main className="min-h-screen pt-24 bg-neo-gray pb-16">
+        <div className="max-w-7xl mx-auto px-4">
+          {/* Header Section */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+            <div>
+              <h1 className="text-3xl md:text-4xl font-black mb-2">
+                All Blogs
+              </h1>
+              <p className="text-base font-bold text-neo-gray-dark">
+                Explore articles on Backend Engineering, Databases and System
+                design
+              </p>
             </div>
+
+            {/* Filters Button */}
+            <BlogFilters />
           </div>
 
           {/* Results Count */}
-          <div className="mb-8">
-            <p className="text-lg font-bold">
+          <div className="mb-6">
+            <p className="text-base font-bold">
               {blogs.length === 0 ? (
                 "No blogs found"
               ) : (
@@ -184,7 +162,7 @@ export default async function BlogsPage({
             </div>
           ) : (
             /* Empty State */
-            <div className="neo-card bg-neo-gray text-center py-20">
+            <div className="neo-card bg-neo-white text-center py-20">
               <div className="text-6xl mb-6">📝</div>
               <h3 className="text-3xl font-black mb-4">No Blogs Found</h3>
               <p className="text-xl font-bold text-neo-gray-dark mb-6">
