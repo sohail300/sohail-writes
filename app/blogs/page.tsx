@@ -4,8 +4,10 @@ import { siteConfig } from "@/config/site";
 import { Metadata } from "next";
 import StructuredData from "@/components/StructuredData";
 import { generateBreadcrumbSchema } from "@/lib/seo/structured-data";
+import connectDB from "@/lib/db";
+import Blog from "@/lib/models/Blog";
 
-interface Blog {
+interface BlogType {
   _id: string;
   title: string;
   excerpt: string;
@@ -16,86 +18,98 @@ interface Blog {
   tags: string[];
 }
 
-interface ApiResponse {
-  data: Blog[];
-  meta: {
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  };
-}
-
 async function fetchBlogs(searchParams: {
   [key: string]: string | string[] | undefined;
-}): Promise<ApiResponse> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+}): Promise<BlogType[]> {
+  try {
+    await connectDB();
 
-  const params = new URLSearchParams();
+    // Build query
+    const query: any = { isPublished: true };
 
-  // Add search param
-  if (searchParams.search) {
-    params.set("search", searchParams.search as string);
-  }
+    // Handle platform filter
+    if (searchParams.platform) {
+      const platforms = Array.isArray(searchParams.platform)
+        ? searchParams.platform
+        : [searchParams.platform];
+      query.platform = { $in: platforms };
+    }
 
-  // Add platform filters
-  if (searchParams.platform) {
-    const platforms = Array.isArray(searchParams.platform)
-      ? searchParams.platform
-      : [searchParams.platform];
-    platforms.forEach((p) => params.append("platform", p));
-  }
+    // Handle tags filter
+    if (searchParams.tag) {
+      const tags = Array.isArray(searchParams.tag)
+        ? searchParams.tag
+        : [searchParams.tag];
+      query.tags = { $in: tags };
+    }
 
-  // Add tag filters
-  if (searchParams.tag) {
-    const tags = Array.isArray(searchParams.tag)
-      ? searchParams.tag
-      : [searchParams.tag];
-    tags.forEach((t) => params.append("tag", t));
-  }
+    // Handle search
+    if (searchParams.search) {
+      query.title = { $regex: searchParams.search as string, $options: "i" };
+    }
 
-  // Set limit to get all blogs
-  params.set("limit", "100");
+    // Fetch blogs
+    const blogs = await Blog.find(query)
+      .sort({ publishedAt: -1 })
+      .limit(100)
+      .lean()
+      .exec();
 
-  const url = `${baseUrl}/api/blogs?${params.toString()}`;
-
-  const response = await fetch(url, {
-    next: { revalidate: 86400 }, // ISR: Revalidate every 24 hours
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch blogs");
-  }
-
-  return response.json();
-}
-
-async function fetchAllBlogsForFilters(): Promise<Blog[]> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-
-  const response = await fetch(`${baseUrl}/api/blogs?limit=1000`, {
-    next: { revalidate: 86400 },
-  });
-
-  if (!response.ok) {
+    // Convert MongoDB documents to plain objects with string _id
+    return blogs.map((blog: any) => ({
+      _id: blog._id.toString(),
+      title: blog.title,
+      excerpt: blog.excerpt,
+      platform: blog.platform,
+      url: blog.url,
+      image: blog.image,
+      publishedAt: blog.publishedAt.toString(),
+      tags: blog.tags,
+    }));
+  } catch (error) {
+    console.error("Error fetching blogs:", error);
     return [];
   }
-
-  const data: ApiResponse = await response.json();
-  return data.data;
 }
+
+async function fetchAllBlogsForFilters(): Promise<BlogType[]> {
+  try {
+    await connectDB();
+
+    const blogs = await Blog.find({ isPublished: true })
+      .sort({ publishedAt: -1 })
+      .limit(1000)
+      .lean()
+      .exec();
+
+    return blogs.map((blog: any) => ({
+      _id: blog._id.toString(),
+      title: blog.title,
+      excerpt: blog.excerpt,
+      platform: blog.platform,
+      url: blog.url,
+      image: blog.image,
+      publishedAt: blog.publishedAt.toString(),
+      tags: blog.tags,
+    }));
+  } catch (error) {
+    console.error("Error fetching blogs for filters:", error);
+    return [];
+  }
+}
+
+// Enable ISR with 24-hour revalidation
+export const revalidate = 86400; // 24 hours
 
 export default async function BlogsPage({
   searchParams,
 }: {
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
-  const [blogsData, allBlogs] = await Promise.all([
+  const [blogs, allBlogs] = await Promise.all([
     fetchBlogs(searchParams),
     fetchAllBlogsForFilters(),
   ]);
-
-  const blogs = blogsData.data;
 
   // Extract unique platforms and tags for filters
   const availablePlatforms = Array.from(
