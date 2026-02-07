@@ -2,6 +2,7 @@
 
 import { useState, FormEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { FaLock } from "react-icons/fa";
 
 export default function AdminLogin() {
   const router = useRouter();
@@ -111,8 +112,8 @@ export default function AdminLogin() {
         </form>
 
         <div className="mt-6 pt-6 border-t-4 border-neo-black">
-          <p className="text-sm font-bold text-neo-gray-dark text-center">
-            🔒 Secure admin access only
+          <p className="text-sm font-bold text-neo-gray-dark text-center flex items-center justify-center gap-2">
+            <FaLock size={16} /> Secure admin access only
           </p>
         </div>
       </div>

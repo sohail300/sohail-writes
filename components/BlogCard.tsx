@@ -1,4 +1,4 @@
-import { FaCalendar, FaDev, FaGlobe } from "react-icons/fa";
+import { FaArrowRight, FaCalendar, FaDev, FaGlobe } from "react-icons/fa";
 import { FaHashnode, FaMedium } from "react-icons/fa6";
 
 interface BlogCardProps {
@@ -47,7 +47,7 @@ export default function BlogCard({
         {/* Content */}
         <div className="space-y-3">
           {/* Platform Badge */}
-          <div className="flex flex-col items-start gap-2">
+          <div className="flex flex-row justify-between items-start gap-2">
             <span className="flex items-center justify-start gap-2 text-sm font-semibold text-neo-black">
               Platform:
               {platform === "Medium" && <FaMedium size={16} color="#000000" />}
@@ -63,7 +63,7 @@ export default function BlogCard({
           </div>
 
           {/* Title */}
-          <h3 className="text-2xl font-black leading-tight group-hover:underline">
+          <h3 className="text-xl font-black leading-tight group-hover:underline line-clamp-2 min-h-12">
             {title}
           </h3>
 
@@ -73,7 +73,7 @@ export default function BlogCard({
           {/* Tags */}
           {tags.length > 0 && (
             <div className="flex flex-wrap gap-2 pt-2">
-              {tags.slice(0, 3).map((tag, index) => (
+              {tags.slice(0, 2).map((tag, index) => (
                 <span
                   key={index}
                   className="border-2 border-neo-black bg-neo-gray px-2 py-1 text-xs font-bold"
@@ -81,9 +81,9 @@ export default function BlogCard({
                   {tag}
                 </span>
               ))}
-              {tags.length > 3 && (
+              {tags.length > 2 && (
                 <span className="text-xs font-bold text-neo-gray-dark py-1">
-                  +{tags.length - 3} more
+                  +{tags.length - 2} more
                 </span>
               )}
             </div>
@@ -91,8 +91,8 @@ export default function BlogCard({
 
           {/* Read More Indicator */}
           <div className="flex items-center gap-2 pt-2">
-            <span className="font-black text-sm group-hover:translate-x-2 transition-transform duration-200">
-              Read Article →
+            <span className="font-black text-sm group-hover:translate-x-2 transition-transform duration-200 flex items-center gap-2">
+              Read Article <FaArrowRight size={16} />
             </span>
           </div>
         </div>

@@ -37,11 +37,7 @@ async function fetchBlogs(searchParams: {
       : [];
     const search = searchParams.search as string | undefined;
     const page = Math.max(1, parseInt((searchParams.page as string) || "1"));
-    const limit = Math.min(
-      100,
-      Math.max(1, parseInt((searchParams.limit as string) || "10"))
-    );
-    const sort = ((searchParams.sort as string) || "desc") as "asc" | "desc";
+    const limit = 20;
 
     // Build query
     const query: any = { isPublished: true };
@@ -64,8 +60,8 @@ async function fetchBlogs(searchParams: {
     // Calculate pagination
     const skip = (page - 1) * limit;
 
-    // Build sort order
-    const sortOrder: any = { publishedAt: sort === "asc" ? 1 : -1 };
+    // Sort by newest first
+    const sortOrder = { publishedAt: -1 as const };
 
     // Fetch blogs with pagination and sorting
     const blogs = await Blog.find(query)
@@ -121,13 +117,9 @@ export default async function BlogsPage({
               <h1 className="text-3xl md:text-4xl font-black mb-2">
                 All Blogs
               </h1>
-              <p className="text-base font-bold text-neo-gray-dark">
-                Explore articles on Backend Engineering, Databases and System
-                design
-              </p>
             </div>
 
-            {/* Filters Button */}
+            {/* Search + Platform & Tag filters */}
             <BlogFilters />
           </div>
 

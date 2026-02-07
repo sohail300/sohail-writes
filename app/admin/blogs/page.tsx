@@ -172,7 +172,7 @@ export default function AdminBlogs() {
   }
 
   return (
-    <div className="min-h-screen pt-24 bg-neo-gray">
+    <div className="min-h-screen py-24 bg-neo-gray">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
@@ -280,7 +280,7 @@ export default function AdminBlogs() {
                     </p>
 
                     {/* Meta */}
-                    <div className="flex flex-col gap-4 mb-4">
+                    <div className="flex flex-row items-center gap-8 mb-4">
                       <span className="flex items-center justify-start gap-2">
                         <span className="font-bold">Platform:</span>
                         {blog.platform === "Medium" && (

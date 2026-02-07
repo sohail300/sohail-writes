@@ -1,510 +1,298 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useEffect } from "react";
-import { FaCheck, FaFilter, FaSearch, FaTimes } from "react-icons/fa";
+import { useState, useEffect, useRef } from "react";
+
+const SEARCH_DEBOUNCE_MS = 400;
+
+const PLATFORMS = ["Medium", "Dev.to", "Hashnode", "Personal Blog", "Other"];
+
+function MultiSelectDropdown({
+  label,
+  options,
+  selected,
+  onToggle,
+  placeholder,
+  isLoading,
+  dropdownRef,
+  isOpen,
+  onOpenChange,
+  triggerId,
+}: {
+  label: string;
+  options: string[];
+  selected: string[];
+  onToggle: (value: string) => void;
+  placeholder: string;
+  isLoading?: boolean;
+  dropdownRef: React.RefObject<HTMLDivElement | null>;
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  triggerId: string;
+}) {
+  const triggerLabel =
+    selected.length === 0
+      ? placeholder
+      : selected.length === 1
+        ? selected[0]
+        : `${selected.length} selected`;
+
+  return (
+    <div ref={dropdownRef} className="relative">
+      <label id={triggerId} className="sr-only">
+        {label}
+      </label>
+      <button
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        aria-labelledby={triggerId}
+        onClick={() => onOpenChange(!isOpen)}
+        className="neo-input flex min-w-[160px] cursor-pointer items-center justify-between gap-2 text-left"
+      >
+        <span className="truncate font-bold">
+          {isLoading ? "Loading…" : triggerLabel}
+        </span>
+        <span
+          className={`flex-shrink-0 text-xs transition-transform ${isOpen ? "rotate-180" : ""}`}
+          aria-hidden
+        >
+          ▼
+        </span>
+      </button>
+
+      {isOpen && (
+        <div
+          className="absolute left-0 top-full z-50 mt-1 flex min-h-0 min-w-full max-h-[16rem] flex-col overflow-hidden border-3 border-neo-black bg-neo-white shadow-[4px_4px_0_0_var(--neo-black)]"
+          role="listbox"
+          aria-multiselectable
+        >
+          <div
+            className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden py-1"
+            style={{ WebkitOverflowScrolling: "touch" }}
+          >
+            {options.length === 0 ? (
+              <div className="px-3 py-4 text-center text-sm font-bold text-neo-gray-dark">
+                No options
+              </div>
+            ) : (
+              options.map((option) => {
+                const checked = selected.includes(option);
+                return (
+                  <label
+                    key={option}
+                    role="option"
+                    aria-selected={checked}
+                    className={`flex cursor-pointer items-center gap-3 border-b-2 border-neo-black px-3 py-2.5 last:border-b-0 hover:bg-neo-yellow focus-within:bg-neo-yellow ${checked ? "bg-neo-yellow" : "bg-neo-white"}`}
+                  >
+                    <span
+                      className={`flex h-5 w-5 flex-shrink-0 items-center justify-center border-2 border-neo-black ${checked ? "bg-neo-black text-neo-yellow" : "bg-neo-white"}`}
+                    >
+                      {checked && (
+                        <span className="text-sm font-black leading-none">
+                          ✓
+                        </span>
+                      )}
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => onToggle(option)}
+                      className="sr-only"
+                    />
+                    <span className="font-bold">{option}</span>
+                  </label>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function BlogFilters() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [isOpen, setIsOpen] = useState(false);
-
-  // Filter data from API
-  const [availablePlatforms, setAvailablePlatforms] = useState<string[]>([
-    "Medium",
-    "Dev.to",
-    "Hashnode",
-    "Personal Blog",
-    "Other",
-  ]);
-  const [availableTags, setAvailableTags] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Search states for dropdowns
-  const [platformSearch, setPlatformSearch] = useState("");
-  const [tagSearch, setTagSearch] = useState("");
-
   const [search, setSearch] = useState(searchParams.get("search") || "");
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(
-    searchParams.getAll("platform")
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(() =>
+    searchParams.getAll("platform"),
   );
-  const [selectedTags, setSelectedTags] = useState<string[]>(
-    searchParams.getAll("tag")
+  const [selectedTags, setSelectedTags] = useState<string[]>(() =>
+    searchParams.getAll("tag"),
   );
-  const [sort, setSort] = useState<"asc" | "desc">(
-    (searchParams.get("sort") as "asc" | "desc") || "desc"
-  );
-  const [limit, setLimit] = useState<number>(
-    parseInt(searchParams.get("limit") || "10")
-  );
+  const [availableTags, setAvailableTags] = useState<string[]>([]);
+  const [platformDropdownOpen, setPlatformDropdownOpen] = useState(false);
+  const [tagDropdownOpen, setTagDropdownOpen] = useState(false);
+  const platformDropdownRef = useRef<HTMLDivElement>(null);
+  const tagDropdownRef = useRef<HTMLDivElement>(null);
+  const isFirstSearchRun = useRef(true);
 
-  // Fetch available platforms and tags from API
+  // Close dropdowns on click outside
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      const target = e.target as Node;
+      if (
+        platformDropdownRef.current &&
+        !platformDropdownRef.current.contains(target)
+      ) {
+        setPlatformDropdownOpen(false);
+      }
+      if (tagDropdownRef.current && !tagDropdownRef.current.contains(target)) {
+        setTagDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  // Sync state from URL when searchParams change (e.g. browser back)
+  useEffect(() => {
+    setSearch(searchParams.get("search") || "");
+    setSelectedPlatforms(searchParams.getAll("platform"));
+    setSelectedTags(searchParams.getAll("tag"));
+  }, [searchParams]);
+
+  // Fetch available tags from API
   useEffect(() => {
     const fetchFilters = async () => {
       try {
-        setIsLoading(true);
         const response = await fetch("/api/blogs/filters");
         const result = await response.json();
-
-        if (result.data) {
-          setAvailableTags(result.data.tags || []);
+        if (result.data?.tags) {
+          setAvailableTags(result.data.tags);
         }
       } catch (error) {
         console.error("Error fetching filters:", error);
-      } finally {
-        setIsLoading(false);
       }
     };
-
     fetchFilters();
   }, []);
 
-  // Prevent body scroll when sidebar is open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
-    }
-
-    // Cleanup on unmount
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [isOpen]);
-
-  async function applyFilters() {
+  function applyFilters(updates?: {
+    search?: string;
+    selectedPlatforms?: string[];
+    selectedTags?: string[];
+  }) {
     const params = new URLSearchParams();
-
-    if (search.trim()) {
-      params.set("search", search.trim());
-    }
-
-    selectedPlatforms.forEach((platform) => {
-      params.append("platform", platform);
-    });
-
-    selectedTags.forEach((tag) => {
-      params.append("tag", tag);
-    });
-
-    // Add sort parameter (only if not default)
-    if (sort !== "desc") {
-      params.set("sort", sort);
-    }
-
-    // Add limit parameter (only if not default)
-    if (limit !== 10) {
-      params.set("limit", limit.toString());
-    }
-
-    const queryString = params.toString();
-
-    // Call the API
-    try {
-      const response = await fetch(`/api/blogs?${queryString}`);
-      const result = await response.json();
-
-      if (response.ok) {
-        console.log("Blogs fetched:", result.data);
-        console.log("Metadata:", result.meta);
-
-        // Update URL with filters
-        router.push(queryString ? `/blogs?${queryString}` : "/blogs");
-      } else {
-        console.error("Error fetching blogs:", result.error);
-      }
-    } catch (error) {
-      console.error("Failed to fetch blogs:", error);
-    }
-
-    // Close the sidebar after applying filters
-    setIsOpen(false);
+    const s = updates?.search !== undefined ? updates.search : search;
+    const p =
+      updates?.selectedPlatforms !== undefined
+        ? updates.selectedPlatforms
+        : selectedPlatforms;
+    const t =
+      updates?.selectedTags !== undefined ? updates.selectedTags : selectedTags;
+    if (s.trim()) params.set("search", s.trim());
+    p.forEach((v) => params.append("platform", v));
+    t.forEach((v) => params.append("tag", v));
+    router.push(params.toString() ? `/blogs?${params.toString()}` : "/blogs");
   }
 
+  const applyFiltersRef = useRef(applyFilters);
+  applyFiltersRef.current = applyFilters;
+
+  // Debounced auto-search when search input changes
+  useEffect(() => {
+    if (isFirstSearchRun.current) {
+      isFirstSearchRun.current = false;
+      return;
+    }
+    const timer = setTimeout(() => {
+      applyFiltersRef.current();
+    }, SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [search]);
+
   function togglePlatform(platform: string) {
-    setSelectedPlatforms((prev) =>
-      prev.includes(platform)
-        ? prev.filter((p) => p !== platform)
-        : [...prev, platform]
-    );
+    const next = selectedPlatforms.includes(platform)
+      ? selectedPlatforms.filter((x) => x !== platform)
+      : [...selectedPlatforms, platform];
+    setSelectedPlatforms(next);
+    applyFilters({ selectedPlatforms: next });
   }
 
   function toggleTag(tag: string) {
-    setSelectedTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
-    );
+    const next = selectedTags.includes(tag)
+      ? selectedTags.filter((x) => x !== tag)
+      : [...selectedTags, tag];
+    setSelectedTags(next);
+    applyFilters({ selectedTags: next });
   }
 
   function clearFilters() {
     setSearch("");
     setSelectedPlatforms([]);
     setSelectedTags([]);
-    setSort("desc");
-    setLimit(10);
-    setPlatformSearch("");
-    setTagSearch("");
+    setPlatformDropdownOpen(false);
+    setTagDropdownOpen(false);
     router.push("/blogs");
-    setIsOpen(false);
-  }
-
-  function selectAllPlatforms() {
-    setSelectedPlatforms([...availablePlatforms]);
-  }
-
-  function clearAllPlatforms() {
-    setSelectedPlatforms([]);
-  }
-
-  function selectAllTags() {
-    setSelectedTags([...availableTags]);
-  }
-
-  function clearAllTags() {
-    setSelectedTags([]);
   }
 
   const hasActiveFilters =
-    search ||
+    search.trim() !== "" ||
     selectedPlatforms.length > 0 ||
-    selectedTags.length > 0 ||
-    sort !== "desc" ||
-    limit !== 10;
-
-  const activeFilterCount =
-    (search ? 1 : 0) +
-    selectedPlatforms.length +
-    selectedTags.length +
-    (sort !== "desc" ? 1 : 0) +
-    (limit !== 10 ? 1 : 0);
-
-  // Filter platforms based on search
-  const filteredPlatforms = availablePlatforms.filter((platform) =>
-    platform.toLowerCase().includes(platformSearch.toLowerCase())
-  );
-
-  // Filter tags based on search
-  const filteredTags = availableTags.filter((tag) =>
-    tag.toLowerCase().includes(tagSearch.toLowerCase())
-  );
+    selectedTags.length > 0;
 
   return (
-    <div className="relative">
-      {/* Filter Toggle Button */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="neo-btn bg-neo-white hover:bg-neo-yellow px-6 py-3 flex items-center gap-2 relative"
+    <div className="flex flex-1 min-w-0 max-w-3xl flex-wrap items-center gap-3 z-10">
+      {/* Search */}
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          applyFiltersRef.current();
+        }}
+        className="min-w-[180px] flex-1"
       >
-        <span className="text-xl">
-          <FaFilter />
-        </span>
-        <span className="font-black">Filters</span>
-        {activeFilterCount > 0 && (
-          <span className="bg-neo-yellow border-2 border-neo-black rounded-full w-6 h-6 flex items-center justify-center text-xs font-black">
-            {activeFilterCount}
-          </span>
-        )}
-      </button>
+        <label htmlFor="search" className="sr-only">
+          Search by title
+        </label>
+        <input
+          id="search"
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by title..."
+          className="neo-input w-full"
+        />
+      </form>
 
-      {/* Filter Panel */}
-      {isOpen && (
-        <>
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 bg-black/20 z-40"
-            onClick={() => setIsOpen(false)}
-          />
+      {/* Platform multi-select dropdown */}
+      <MultiSelectDropdown
+        label="Filter by platform"
+        options={PLATFORMS}
+        selected={selectedPlatforms}
+        onToggle={togglePlatform}
+        placeholder="All platforms"
+        dropdownRef={platformDropdownRef}
+        isOpen={platformDropdownOpen}
+        onOpenChange={setPlatformDropdownOpen}
+        triggerId="platform-filter-label"
+      />
 
-          {/* Filter Sidebar */}
-          <div
-            className="fixed right-0 top-0 bottom-0 w-full md:w-96 bg-neo-white border-l-3 border-neo-black z-50"
-            style={{ maxHeight: "100vh" }}
-          >
-            <div
-              className="h-full overflow-y-scroll overscroll-contain p-6 space-y-6"
-              style={{ WebkitOverflowScrolling: "touch" }}
-            >
-              {/* Header */}
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-black">Filters</h2>
-                <button
-                  onClick={() => setIsOpen(false)}
-                  className="neo-btn bg-neo-gray hover:bg-red-100 px-4 py-2 text-xl"
-                >
-                  ✕
-                </button>
-              </div>
+      {/* Tags multi-select dropdown */}
+      <MultiSelectDropdown
+        label="Filter by tag"
+        options={availableTags}
+        selected={selectedTags}
+        onToggle={toggleTag}
+        placeholder="All tags"
+        isLoading={availableTags.length === 0}
+        dropdownRef={tagDropdownRef}
+        isOpen={tagDropdownOpen}
+        onOpenChange={setTagDropdownOpen}
+        triggerId="tag-filter-label"
+      />
 
-              {/* Active Filters Count */}
-              {hasActiveFilters && (
-                <div className="bg-neo-yellow border-3 border-neo-black p-3">
-                  <p className="font-black text-sm">
-                    {activeFilterCount} Active Filter
-                    {activeFilterCount > 1 ? "s" : ""}
-                  </p>
-                </div>
-              )}
-
-              {/* Search Bar */}
-              <div>
-                <label
-                  htmlFor="search"
-                  className="block font-black text-sm mb-2"
-                >
-                  <div className="flex items-center gap-2">
-                    <FaSearch className="w-4 h-4" />
-                    <span className="text-sm">Search by title</span>
-                  </div>
-                </label>
-                <input
-                  id="search"
-                  type="text"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search by title..."
-                  className="neo-input w-full"
-                />
-              </div>
-
-              {/* Platform Filters */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="font-black text-sm">
-                    Platform ({selectedPlatforms.length} selected)
-                  </label>
-                  <div className="flex gap-1">
-                    <button
-                      onClick={selectAllPlatforms}
-                      className="text-xs font-bold text-neo-gray-dark hover:text-neo-black"
-                    >
-                      All
-                    </button>
-                    <span className="text-xs">|</span>
-                    <button
-                      onClick={clearAllPlatforms}
-                      className="text-xs font-bold text-neo-gray-dark hover:text-neo-black"
-                    >
-                      Clear
-                    </button>
-                  </div>
-                </div>
-
-                {/* Platform Search */}
-                <input
-                  type="text"
-                  value={platformSearch}
-                  onChange={(e) => setPlatformSearch(e.target.value)}
-                  placeholder="Search platforms"
-                  className="neo-input w-full mb-2 text-sm"
-                />
-
-                {/* Platform List */}
-                <div className="border-3 border-neo-black bg-neo-white max-h-40 overflow-y-auto">
-                  {isLoading ? (
-                    <div className="p-3 text-center text-sm font-bold text-neo-gray-dark">
-                      Loading...
-                    </div>
-                  ) : filteredPlatforms.length > 0 ? (
-                    filteredPlatforms.map((platform) => (
-                      <label
-                        key={platform}
-                        className={`flex items-center gap-2 p-2 cursor-pointer hover:bg-neo-gray transition-colors border-b-2 border-neo-black last:border-b-0 ${
-                          selectedPlatforms.includes(platform)
-                            ? "bg-neo-yellow"
-                            : ""
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={selectedPlatforms.includes(platform)}
-                          onChange={() => togglePlatform(platform)}
-                          className="w-4 h-4 border-2 border-neo-black"
-                        />
-                        <span className="text-sm font-bold">{platform}</span>
-                      </label>
-                    ))
-                  ) : (
-                    <div className="p-3 text-center text-sm font-bold text-neo-gray-dark">
-                      No platforms found
-                    </div>
-                  )}
-                </div>
-
-                {/* Selected Platforms */}
-                {selectedPlatforms.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {selectedPlatforms.map((platform) => (
-                      <span
-                        key={platform}
-                        className="bg-neo-yellow border-2 border-neo-black px-2 py-1 text-xs font-bold flex items-center gap-1"
-                      >
-                        {platform}
-                        <button
-                          onClick={() => togglePlatform(platform)}
-                          className="hover:text-red-600"
-                        >
-                          ✕
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Tag Filters */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="font-black text-sm">
-                    Tags ({selectedTags.length} selected)
-                  </label>
-                  <div className="flex gap-1">
-                    <button
-                      onClick={selectAllTags}
-                      className="text-xs font-bold text-neo-gray-dark hover:text-neo-black"
-                    >
-                      All
-                    </button>
-                    <span className="text-xs">|</span>
-                    <button
-                      onClick={clearAllTags}
-                      className="text-xs font-bold text-neo-gray-dark hover:text-neo-black"
-                    >
-                      Clear
-                    </button>
-                  </div>
-                </div>
-
-                {/* Tag Search */}
-                <input
-                  type="text"
-                  value={tagSearch}
-                  onChange={(e) => setTagSearch(e.target.value)}
-                  placeholder="Search tags"
-                  className="neo-input w-full mb-2 text-sm"
-                />
-
-                {/* Tag List */}
-                <div className="border-4 border-neo-black bg-neo-white max-h-40 overflow-y-auto">
-                  {isLoading ? (
-                    <div className="p-3 text-center text-sm font-bold text-neo-gray-dark">
-                      Loading...
-                    </div>
-                  ) : filteredTags.length > 0 ? (
-                    filteredTags.map((tag) => (
-                      <label
-                        key={tag}
-                        className={`flex items-center gap-2 p-2 cursor-pointer hover:bg-neo-gray transition-colors border-b-2 border-neo-black last:border-b-0 ${
-                          selectedTags.includes(tag) ? "bg-neo-yellow" : ""
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={selectedTags.includes(tag)}
-                          onChange={() => toggleTag(tag)}
-                          className="w-4 h-4 border-2 border-neo-black"
-                        />
-                        <span className="text-sm font-bold">{tag}</span>
-                      </label>
-                    ))
-                  ) : (
-                    <div className="p-3 text-center text-sm font-bold text-neo-gray-dark">
-                      No tags found
-                    </div>
-                  )}
-                </div>
-
-                {/* Selected Tags */}
-                {selectedTags.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {selectedTags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="bg-neo-yellow border-2 border-neo-black px-2 py-1 text-xs font-bold flex items-center gap-1"
-                      >
-                        {tag}
-                        <button
-                          onClick={() => toggleTag(tag)}
-                          className="hover:text-red-600"
-                        >
-                          ✕
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Sort & Limit in Grid */}
-              <div className="grid grid-cols-2 gap-4">
-                {/* Sort Order */}
-                <div>
-                  <label
-                    htmlFor="sort"
-                    className="block font-black text-sm mb-2"
-                  >
-                    Sort
-                  </label>
-                  <select
-                    id="sort"
-                    value={sort}
-                    onChange={(e) => setSort(e.target.value as "asc" | "desc")}
-                    className="neo-input w-full text-sm"
-                  >
-                    <option value="desc">Newest</option>
-                    <option value="asc">Oldest</option>
-                  </select>
-                </div>
-
-                {/* Results Per Page */}
-                <div>
-                  <label
-                    htmlFor="limit"
-                    className="block font-black text-sm mb-2"
-                  >
-                    Show
-                  </label>
-                  <select
-                    id="limit"
-                    value={limit}
-                    onChange={(e) => setLimit(parseInt(e.target.value))}
-                    className="neo-input w-full text-sm"
-                  >
-                    <option value="10">10</option>
-                    <option value="20">20</option>
-                    <option value="30">30</option>
-                    <option value="50">50</option>
-                    <option value="100">100</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="space-y-3 pt-4 border-t-4 border-neo-black">
-                {hasActiveFilters && (
-                  <button
-                    onClick={clearFilters}
-                    className="neo-btn bg-red-100 hover:bg-red-200 w-full py-3 font-black"
-                  >
-                    <div className="flex items-center gap-2">
-                      <FaTimes />
-                      <span className="text-sm">Clear All Filters</span>
-                    </div>
-                  </button>
-                )}
-                <button
-                  onClick={applyFilters}
-                  className="neo-btn bg-neo-yellow hover:bg-neo-white w-full py-3 font-black"
-                >
-                  <div className="flex items-center gap-2">
-                    {" "}
-                    <FaCheck />
-                    <span className="text-sm">Apply Filters</span>
-                  </div>
-                </button>
-              </div>
-            </div>
-          </div>
-        </>
+      {/* Clear filters - only show when something is selected */}
+      {hasActiveFilters && (
+        <button
+          type="button"
+          onClick={clearFilters}
+          className="neo-btn border-2 border-neo-black bg-neo-white px-4 py-2 text-sm font-black hover:bg-red-100"
+        >
+          Clear filters
+        </button>
       )}
     </div>
   );
